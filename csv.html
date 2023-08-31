@@ -12,8 +12,11 @@
         </div>
         <input id="noteBox" class="inputBox" placeholder="Note"/>
         <input id="stepBox" class="inputBox" placeholder="Step"/>
-        <button onclick="generateCsv()">Download CSV</button>
+        <button id="clearButton" onclick="clearAll()">Clear</button>
       </div>
+    </div>
+    <div class="fullWidthContainer">
+      <button id="downloadButton" onclick="generateCsv()">Download CSV</button>
     </div>
     <table id="theTable">
       <thead>
@@ -28,11 +31,42 @@
   </body>
 
   <script>
+    const storageKey = "tsnSaved";
+
     const preCsvLines = [];
 
     const finalCsvLines = [
       'Time,Note,Step'  // Header
     ]
+
+    function clearAll() {
+      if (confirm('Are you sure? All data will be cleared and can not be recovered')) {
+        preCsvLines.length = 0;
+        document.getElementById('savedLines').replaceChildren();
+        localStorage.removeItem(storageKey);
+      }
+    }
+
+    function loadFromLocalStorage() {
+      if (preCsvLines.length !== 0) {
+        return;
+      }
+
+      const loadedData = localStorage.getItem(storageKey);
+      if (loadedData === null || loadedData === undefined) {
+        return;
+      }
+
+      preCsvLines.push(...JSON.parse(loadedData));
+
+      for (let line of preCsvLines) {
+        addLineToTable(line[0], line[1], line[2]);
+      }
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem(storageKey, JSON.stringify(preCsvLines));
+    }
 
     function generateCsv() {
       const filename = prompt('Save As... *.csv');
@@ -75,15 +109,7 @@
       return str.replaceAll('"', '""').replaceAll(',', '","');
     }
 
-    function newLine() {
-      const note = document.getElementById('noteBox').value;
-      if (note === null || note === undefined || note === '') {
-        return;
-      }
-
-      const time = document.getElementById('clockContainer').innerText;
-      const step = document.getElementById('stepBox').value;
-
+    function addLineToTable(time, note, step) {
       const tableBody = document.getElementById('savedLines');
       const newRow = tableBody.insertRow();
 
@@ -99,30 +125,51 @@
       timeCell.innerText = time;
       noteCell.innerText = note;
       stepCell.innerText = step;
+    }
+
+    function newLine() {
+      const note = document.getElementById('noteBox').value;
+      if (note === null || note === undefined || note === '') {
+        return;
+      }
+
+      const time = document.getElementById('clockContainer').innerText;
+      const step = document.getElementById('stepBox').value;
+
+      addLineToTable(time, note, step);
 
       preCsvLines.push([time, note, step]);
+      saveToLocalStorage();
 
       document.getElementById('noteBox').value = '';
       document.getElementById('stepBox').value = '';
     }
 
+
+    // Page Initialisation
     document.getElementById('noteBox').addEventListener('keydown', (event) => enterListener(event));
     document.getElementById('stepBox').addEventListener('keydown', (event) => enterListener(event));
 
-    document.getElementById('clockText').innerText = (new Date()).toLocaleTimeString()
+    document.getElementById('clockText').innerText = (new Date()).toLocaleTimeString();
+
     setInterval(() => {
-      document.getElementById('clockText').innerText = (new Date()).toLocaleTimeString()
+      document.getElementById('clockText').innerText = (new Date()).toLocaleTimeString();
     }, 1000);
+
+    loadFromLocalStorage();
   </script>
 
   <style>
       html {
           font-family: "Verdana", Arial, sans-serif;
+          margin: 0;
+          padding: 0;
       }
 
       body {
           width: 100vw;
           height: 100vh;
+          margin: 0;
       }
 
       .fullWidthContainer {
@@ -133,10 +180,11 @@
 
       #topBar {
           display: flex;
-          width: 80vw;
+          width: 90vw;
           justify-content: space-between;
           border: 2px solid cornflowerblue;
           padding: 10px;
+          margin: 5px 0
       }
 
       #clockContainer {
@@ -144,6 +192,34 @@
           display: flex;
           flex-direction: column;
           justify-content: center;
+      }
+
+      #clearButton {
+        border: none;
+        background-color: #aa0000;
+        color: #ffffff;
+      }
+
+      #clearButton:hover {
+        background-color: #770000;
+        color: #cccccc;
+        cursor: pointer;
+      }
+
+      #downloadButton {
+        border: none;
+        background-color: #00aa00;
+        color: #ffffff;
+        height: calc(1.6rem + 10px);
+        font-size: 1.4rem;
+        padding: 5px;
+        width: 50vw;
+      }
+
+      #downloadButton:hover,#downloadButton:active {
+        color: #cccccc;
+        background-color: #007700;
+        cursor: pointer;
       }
 
       .inputBox {
