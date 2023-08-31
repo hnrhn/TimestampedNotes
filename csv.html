@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Timestamp Notes Thing</title>
+  </head>
+  <body>
+    <div class="fullWidthContainer">
+      <div id="topBar">
+        <div id="clockContainer">
+          <div id="clockText"></div>
+        </div>
+        <input id="noteBox" class="inputBox" placeholder="Note"/>
+        <input id="stepBox" class="inputBox" placeholder="Step"/>
+        <button onclick="generateCsv()">Download CSV</button>
+      </div>
+    </div>
+    <table id="theTable">
+      <thead>
+        <tr>
+          <th class="timeHeader">Time</th>
+          <th class="noteHeader">Note</th>
+          <th class="stepHeader">Step</th>
+        </tr>
+      </thead>
+      <tbody id="savedLines"></tbody>
+    </table>
+  </body>
+
+  <script>
+    const preCsvLines = [];
+
+    const finalCsvLines = [
+      'Time,Note,Step'  // Header
+    ]
+
+    function generateCsv() {
+      const filename = prompt('Save As... *.csv');
+      if (filename === null || filename === '') {
+        return;
+      }
+
+      for (let line of preCsvLines) {
+        finalCsvLines.push(`${csvSafe(line[0])},${csvSafe(line[1])},${csvSafe(line[2])}`);
+      }
+
+      const csvText = finalCsvLines.join('\n');
+      download(filename, csvText);
+    }
+
+    function download(filename, text) {
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+
+      element.style.display = 'none';
+      document.body.appendChild(element);
+
+      element.click();
+
+      document.body.removeChild(element);
+    }
+
+    function enterListener(e) {
+      if (e.key === "Enter") {
+        newLine();
+      }
+    }
+
+    function csvSafe(str) {
+      if (str === undefined || str === null) {
+        return '';
+      }
+
+      return str.replaceAll('"', '""').replaceAll(',', '","');
+    }
+
+    function newLine() {
+      const note = document.getElementById('noteBox').value;
+      if (note === null || note === undefined || note === '') {
+        return;
+      }
+
+      const time = document.getElementById('clockContainer').innerText;
+      const step = document.getElementById('stepBox').value;
+
+      const tableBody = document.getElementById('savedLines');
+      const newRow = tableBody.insertRow();
+
+      const timeCell = newRow.insertCell();
+      timeCell.className = 'timeCell';
+
+      const noteCell = newRow.insertCell();
+      noteCell.className = 'noteCell';
+
+      const stepCell = newRow.insertCell();
+      stepCell.className = 'stepCell';
+
+      timeCell.innerText = time;
+      noteCell.innerText = note;
+      stepCell.innerText = step;
+
+      preCsvLines.push([time, note, step]);
+
+      document.getElementById('noteBox').value = '';
+      document.getElementById('stepBox').value = '';
+    }
+
+    document.getElementById('noteBox').addEventListener('keydown', (event) => enterListener(event));
+    document.getElementById('stepBox').addEventListener('keydown', (event) => enterListener(event));
+
+    document.getElementById('clockText').innerText = (new Date()).toLocaleTimeString()
+    setInterval(() => {
+      document.getElementById('clockText').innerText = (new Date()).toLocaleTimeString()
+    }, 1000);
+  </script>
+
+  <style>
+      html {
+          font-family: "Verdana", Arial, sans-serif;
+      }
+
+      body {
+          width: 100vw;
+          height: 100vh;
+      }
+
+      .fullWidthContainer {
+          width: 100vw;
+          display: flex;
+          justify-content: center;
+      }
+
+      #topBar {
+          display: flex;
+          width: 80vw;
+          justify-content: space-between;
+          border: 2px solid cornflowerblue;
+          padding: 10px;
+      }
+
+      #clockContainer {
+          font-size: large;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+      }
+
+      .inputBox {
+          font-size: 1.4rem;
+          height: 1.6rem;
+      }
+
+      #noteBox {
+          width: 60vw;
+      }
+
+      #stepBox {
+          width: 5vw;
+      }
+
+      th {
+          background: black;
+          color: white;
+          font-weight: bold;
+          border-bottom: 1px solid black;
+      }
+
+      #theTable {
+          width: 100vw;
+      }
+
+      .timeHeader,.timeCell {
+          width: 10vw;
+      }
+
+      .noteHeader,.noteCell {
+          width: 78vw;
+      }
+
+      .stepHeader,.stepCell {
+          width: 10vw;
+      }
+
+      .timeCell {
+          text-align: end;
+      }
+
+      .noteCell {
+          text-align: start;
+          text-overflow: ellipsis;
+      }
+
+      .stepCell {
+          text-align: center;
+      }
+
+  </style>
+</html>
